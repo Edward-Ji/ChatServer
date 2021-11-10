@@ -189,7 +189,7 @@ def read(key):
     except UnicodeError:
         logging.warning(f"Can not decode message from {conn.getpeername()}")
     except OSError as e:
-        logging.warning(f"OSError: {e}")
+        logging.warning(f"{type(e).__name__}: {e}")
         session.logout()
         selector.unregister(conn)
 
@@ -204,7 +204,7 @@ def write(key):
             conn.send(reply.encode())
         selector.modify(conn, selectors.EVENT_READ, key.data)
     except OSError as e:
-        logging.warning(f"OSError: {e}")
+        logging.warning(f"{type(e).__name__}: {e}")
         session.logout()
         selector.unregister(conn)
 
