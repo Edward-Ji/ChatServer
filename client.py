@@ -26,9 +26,10 @@ def main():
                 if key.fileobj is client:
                     sys.stdout.write(client.recv(1024).decode())
     except KeyboardInterrupt:
-        pass
-    else:
         client.close()
+    except Exception as e:
+        sys.stdout.write(f"{type(e).__name__}: {e}\n")
+        sys.exit(e.errno)
 
 
 if __name__ == '__main__':
