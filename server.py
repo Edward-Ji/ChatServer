@@ -35,7 +35,6 @@ class User:
             if user.name == name:
                 return None
         user: "User" = User(name, passwd)
-        user.logged_in = True
         return user
 
     def login(self, passwd: str) -> bool:
@@ -60,22 +59,17 @@ class Session:
         self.pending: List[str] = []
         self.replies: List[str] = []
 
-    def switch_user(self, user: User):
-        self.logout()
-        self._user = user
-
     def register(self, name: str, passwd: str) -> bool:
         user = User.register(name, passwd)
-        if user is not None:
-            self.switch_user(user)
-            return True
-        return False
+        return user is not None
 
     def login(self, name: str, passwd: str) -> bool:
+        if self._user is not None:
+            return False
         for user in User.instances:
             if user.name == name:
                 if user.login(passwd):
-                    self.switch_user(user)
+                    self._user = user
                     return True
                 break
         return False
@@ -225,8 +219,8 @@ loop = True
 # Do not modify or remove this handler
 def quit_gracefully(signum, frame):
     global loop
-    loop = False
     logging.info("Recieved interrupt signal")
+    loop = False
 
 
 def main():
