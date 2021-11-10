@@ -30,11 +30,16 @@ class User:
         self.instances.append(self)
 
     @classmethod
-    def register(cls, name: str, passwd: str) -> Optional["User"]:
+    def by_name(cls, name: str) -> Optional["User"]:
         for user in cls.instances:
             if user.name == name:
-                return None
-        user: "User" = User(name, passwd)
+                return user
+
+    @classmethod
+    def register(cls, name: str, passwd: str) -> Optional["User"]:
+        if cls.by_name(name) is not None:
+            return None
+        user: "User" = cls(name, passwd)
         return user
 
     def login(self, passwd: str) -> bool:
@@ -51,36 +56,68 @@ class User:
     def logout(self):
         self.logged_in = False
 
+    def join(self, channel_name: str) -> bool:
+        channel = Channel.by_name(channel_name)
+        if channel is None:
+            return False
+        return channel.add_user(self)
+
+
+class Channel:
+
+    instances: List["Channel"] = []
+
+    def __init__(self, name: str):
+        self.name = name
+        self.users: List[User] = []
+        self.instances.append(self)
+
+    def add_user(self, user: User) -> bool:
+        if user in self.users:
+            return False
+        self.users.append(user)
+        return True
+
+    @classmethod
+    def by_name(cls, name: str) -> Optional["Channel"]:
+        for channel in cls.instances:
+            if channel.name == name:
+                return channel
+
+    @classmethod
+    def create(cls, name: str) -> Optional["Channel"]:
+        if cls.by_name(name) is not None:
+            return None
+        return cls(name)
+
 
 class Session:
 
     def __init__(self):
-        self._user: User = None
+        self.user: User = None
         self.pending: List[str] = []
         self.replies: List[str] = []
 
-    def register(self, name: str, passwd: str) -> bool:
-        user = User.register(name, passwd)
-        return user is not None
-
     def login(self, name: str, passwd: str) -> bool:
-        if self._user is not None:
+        if self.user is not None:
             return False
         for user in User.instances:
             if user.name == name:
                 if user.login(passwd):
-                    self._user = user
+                    self.user = user
                     return True
                 break
         return False
 
     def logout(self):
-        if self._user is not None:
-            self._user.logout()
+        if self.user is not None:
+            self.user.logout()
 
     def handle(self):
         while self.pending:
-            self.replies.append(handle(self, self.pending.pop()))
+            result = handle(self, self.pending.pop())
+            if result is not None:
+                self.replies.append(result)
 
 
 def check_n_args(*n_args: int) -> Callable:
@@ -106,7 +143,7 @@ def check_n_args(*n_args: int) -> Callable:
 
 @check_n_args(2)
 def register(session: Session, tokens: List[str]) -> str:
-    return int(session.register(*tokens))
+    return int(User.register(*tokens) is not None)
 
 
 @check_n_args(2)
@@ -116,12 +153,16 @@ def login(session: Session, tokens: List[str]) -> str:
 
 @check_n_args(1)
 def join(session: Session, tokens: List[str]) -> str:
-    return "join"
+    if session.user is None:
+        return 0
+    return int(session.user.join(*tokens))
 
 
 @check_n_args(1)
 def create(session: Session, tokens: List[str]) -> str:
-    return "create"
+    if session.user is None:
+        return 0
+    return int(Channel.create(*tokens) is not None)
 
 
 @check_n_args(2, None)
@@ -131,10 +172,10 @@ def say(session: Session, tokens: List[str]) -> str:
 
 @check_n_args()
 def channels(session: Session, tokens: List[str]) -> str:
-    return "channels"
+    return ", ".join(map(lambda c: c.name, Channel.instances))
 
 
-def handle(session: Session, msg: str) -> str:
+def handle(session: Session, msg: str) -> Optional[str]:
     tokens: List[str] = msg.strip().split()
 
     if not msg:
@@ -157,7 +198,8 @@ def handle(session: Session, msg: str) -> str:
     else:
         return f"RESULT ERROR unrecognised message type {msg_type}"
 
-    return f"RESULT {result}"
+    if result is not None:
+        return f"RESULT {result}"
 
 
 def accept(server: socket.socket) -> Session:
