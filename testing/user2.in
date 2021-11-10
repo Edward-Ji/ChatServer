@@ -1,0 +1,3 @@
+REGISTER user2 passwdu2
+LOGIN user2 passwdu2
+JOIN channel1

@@ -26,7 +26,7 @@ class User:
                                             passwd.encode(),
                                             self._salt,
                                             1000)
-        self.logged_in: bool = False
+        self.logged_in: Optional[Session] = None
         self.instances.append(self)
 
     @classmethod
@@ -42,25 +42,31 @@ class User:
         user: "User" = cls(name, passwd)
         return user
 
-    def login(self, passwd: str) -> bool:
-        if self.logged_in:
+    def login(self, session: "Session", passwd: str) -> bool:
+        if self.logged_in is not None:
             return False
         passhash: bytes = pbkdf2_hmac("sha256",
                                       passwd.encode(),
                                       self._salt,
                                       1000)
         if self._passhash == passhash:
-            self.logged_in = True
+            self.logged_in = session
         return self.logged_in
 
     def logout(self):
-        self.logged_in = False
+        self.logged_in = None
 
     def join(self, channel_name: str) -> bool:
         channel = Channel.by_name(channel_name)
         if channel is None:
             return False
         return channel.add_user(self)
+
+    def say(self, channel_name: str, *words: str) -> None:
+        channel = Channel.by_name(channel_name)
+        if channel is None or self not in channel.users:
+            return
+        channel.broadcast(self, *words)
 
 
 class Channel:
@@ -77,6 +83,12 @@ class Channel:
             return False
         self.users.append(user)
         return True
+
+    def broadcast(self, user: User, *words: str) -> None:
+        words = " ".join(words)
+        msg = f"RECV {user.name} {self.name} {words}"
+        for user in self.users:
+            user.logged_in.replies.append(msg)
 
     @classmethod
     def by_name(cls, name: str) -> Optional["Channel"]:
@@ -103,7 +115,7 @@ class Session:
             return False
         for user in User.instances:
             if user.name == name:
-                if user.login(passwd):
+                if user.login(self, passwd):
                     self.user = user
                     return True
                 break
@@ -166,8 +178,10 @@ def create(session: Session, tokens: List[str]) -> str:
 
 
 @check_n_args(2, None)
-def say(session: Session, tokens: List[str]) -> str:
-    return "say"
+def say(session: Session, tokens: List[str]) -> None:
+    if session.user is None:
+        return
+    session.user.say(*tokens)
 
 
 @check_n_args()
@@ -178,8 +192,8 @@ def channels(session: Session, tokens: List[str]) -> str:
 def handle(session: Session, msg: str) -> Optional[str]:
     tokens: List[str] = msg.strip().split()
 
-    if not msg:
-        return "RESULT ERROR empty message"
+    if not tokens:
+        return "RESULT ERROR missing message type"
 
     msg_type: str = tokens.pop(0)
     result: str = ""
@@ -199,7 +213,7 @@ def handle(session: Session, msg: str) -> Optional[str]:
         return f"RESULT ERROR unrecognised message type {msg_type}"
 
     if result is not None:
-        return f"RESULT {result}"
+        return f"RESULT {msg_type} {result}"
 
 
 def accept(server: socket.socket) -> Session:
@@ -218,7 +232,7 @@ def read(key):
         msg = conn.recv(1024).decode()
         if msg:
             logging.debug(f"Recieved {msg!r} from {conn.getpeername()}")
-            session.pending.append(msg)
+            session.pending.extend(filter(None, msg.split("\n")))
             selector.modify(conn, selectors.EVENT_WRITE, key.data)
         else:
             close(key)
