@@ -36,11 +36,11 @@ class User:
                 return user
 
     @classmethod
-    def register(cls, name: str, passwd: str) -> Optional["User"]:
+    def register(cls, name: str, passwd: str) -> bool:
         if cls.by_name(name) is not None:
-            return None
-        user: "User" = cls(name, passwd)
-        return user
+            return False
+        cls(name, passwd)
+        return True
 
     def login(self, session: "Session", passwd: str) -> bool:
         if self.logged_in is not None:
@@ -97,10 +97,11 @@ class Channel:
                 return channel
 
     @classmethod
-    def create(cls, name: str) -> Optional["Channel"]:
+    def create(cls, name: str) -> bool:
         if cls.by_name(name) is not None:
             return None
-        return cls(name)
+        cls(name)
+        return True
 
 
 class Session:
@@ -155,26 +156,30 @@ def check_n_args(*n_args: int) -> Callable:
 
 @check_n_args(2)
 def register(session: Session, tokens: List[str]) -> str:
-    return int(User.register(*tokens) is not None)
+    status = User.register(*tokens)
+    return "{:d}".format(status)
 
 
 @check_n_args(2)
 def login(session: Session, tokens: List[str]) -> str:
-    return int(session.login(*tokens))
+    status = session.login(*tokens)
+    return "{:d}".format(status)
 
 
 @check_n_args(1)
 def join(session: Session, tokens: List[str]) -> str:
     if session.user is None:
         return 0
-    return int(session.user.join(*tokens))
+    status = session.user.join(*tokens)
+    return "{} {:d}".format(tokens[0], status)
 
 
 @check_n_args(1)
 def create(session: Session, tokens: List[str]) -> str:
     if session.user is None:
         return 0
-    return int(Channel.create(*tokens) is not None)
+    status = Channel.create(*tokens)
+    return "{} {:d}".format(tokens[0], status)
 
 
 @check_n_args(2, None)
