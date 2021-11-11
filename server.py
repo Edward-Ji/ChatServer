@@ -64,11 +64,12 @@ class User:
             return False
         return channel.add_user(self)
 
-    def say(self, channel_name: str, *words: str) -> None:
+    def say(self, channel_name: str, *words: str) -> bool:
         channel = Channel.by_name(channel_name)
         if channel is None or self not in channel.users:
-            return
+            return False
         channel.broadcast(self, *words)
+        return True
 
 
 class Channel:
@@ -101,7 +102,7 @@ class Channel:
     @classmethod
     def create(cls, name: str) -> bool:
         if cls.by_name(name) is not None:
-            return None
+            return False
         cls(name)
         return True
 
@@ -158,13 +159,13 @@ def check_n_args(*n_args: int) -> Callable:
 
 @check_n_args(2)
 def register(session: Session, tokens: List[str]) -> str:
-    status = User.register(*tokens)
+    status: bool = User.register(*tokens)
     return "{:d}".format(status)
 
 
 @check_n_args(2)
 def login(session: Session, tokens: List[str]) -> str:
-    status = session.login(*tokens)
+    status: bool = session.login(*tokens)
     return "{:d}".format(status)
 
 
@@ -172,7 +173,7 @@ def login(session: Session, tokens: List[str]) -> str:
 def join(session: Session, tokens: List[str]) -> str:
     if session.user is None:
         return 0
-    status = session.user.join(*tokens)
+    status: bool = session.user.join(*tokens)
     return "{} {:d}".format(tokens[0], status)
 
 
@@ -180,15 +181,16 @@ def join(session: Session, tokens: List[str]) -> str:
 def create(session: Session, tokens: List[str]) -> str:
     if session.user is None:
         return 0
-    status = Channel.create(*tokens)
+    status: bool = Channel.create(*tokens)
     return "{} {:d}".format(tokens[0], status)
 
 
 @check_n_args(2, None)
-def say(session: Session, tokens: List[str]) -> None:
+def say(session: Session, tokens: List[str]) -> Optional[str]:
     if session.user is None:
         return
-    session.user.say(*tokens)
+    if not session.user.say(*tokens):
+        return "ERROR"
 
 
 @check_n_args()
