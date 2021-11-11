@@ -186,7 +186,8 @@ def say(session: Session, tokens: List[str]) -> None:
 
 @check_n_args()
 def channels(session: Session, tokens: List[str]) -> str:
-    return ", ".join(map(lambda c: c.name, Channel.instances))
+    # Return a sorted list of all channel names, joined by comma space.
+    return ", ".join(sorted(map(lambda c: c.name, Channel.instances)))
 
 
 def handle(session: Session, msg: str) -> Optional[str]:
