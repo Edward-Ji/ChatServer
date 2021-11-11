@@ -51,7 +51,9 @@ class User:
                                       1000)
         if self._passhash == passhash:
             self.logged_in = session
-        return self.logged_in
+            return True
+        else:
+            return False
 
     def logout(self):
         self.logged_in = None
