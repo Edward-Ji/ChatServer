@@ -128,7 +128,7 @@ class Session:
 
     def handle(self):
         while self.pending:
-            result = handle(self, self.pending.pop())
+            result = handle(self, self.pending.pop(0))
             if result is not None:
                 self.replies.append(result)
 
@@ -227,7 +227,9 @@ def accept(server: socket.socket) -> Session:
     logging.info(f"Accept connection from address {addr}")
     conn.setblocking(False)
     session = Session()
-    selector.register(conn, selectors.EVENT_READ, session)
+    selector.register(conn,
+                      selectors.EVENT_READ | selectors.EVENT_WRITE,
+                      session)
     return session
 
 
@@ -239,7 +241,6 @@ def read(key):
         if msg:
             logging.debug(f"Recieved {msg!r} from {conn.getpeername()}")
             session.pending.extend(filter(None, msg.split("\n")))
-            selector.modify(conn, selectors.EVENT_WRITE, key.data)
         else:
             close(key)
     except UnicodeError:
@@ -258,7 +259,6 @@ def write(key):
             reply: str = session.replies.pop(0) + "\n"
             logging.debug(f"Sending {reply!r} to {conn.getpeername()}")
             conn.send(reply.encode())
-        selector.modify(conn, selectors.EVENT_READ, key.data)
     except OSError as e:
         logging.warning(f"{type(e).__name__}: {e}")
         session.logout()
@@ -304,10 +304,11 @@ def main():
         for key, mask in events:
             if key.data is None:
                 sessions.append(accept(server))
-            elif mask & selectors.EVENT_READ:
-                read(key)
-            elif mask & selectors.EVENT_WRITE:
-                write(key)
+            else:
+                if mask & selectors.EVENT_READ:
+                    read(key)
+                if mask & selectors.EVENT_WRITE:
+                    write(key)
 
         for session in sessions:
             session.handle()
