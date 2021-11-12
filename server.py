@@ -243,7 +243,7 @@ def read(key):
     try:
         msg = conn.recv(1024).decode()
         if msg:
-            logging.debug(f"Recieved {msg!r} from {conn.getpeername()}")
+            logging.debug(f"Received {msg!r} from {conn.getpeername()}")
             session.pending.extend(filter(None, msg.split("\n")))
         else:
             close(key)
@@ -285,7 +285,7 @@ loop = True
 # Do not modify or remove this handler
 def quit_gracefully(signum, frame):
     global loop
-    logging.info("Recieved interrupt signal")
+    logging.info("Received interrupt signal")
     loop = False
 
 
