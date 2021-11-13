@@ -149,4 +149,7 @@ RESULT ERROR unknown type
 
 ## Testing
 
-pass
+### Coverage
+
+```
+```
