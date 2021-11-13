@@ -1,0 +1,4 @@
+S0 @ 5050
+C0 ~ S0
+C0 > UNKNOWN
+C0 < RESULT ERROR unknown message type

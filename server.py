@@ -202,9 +202,6 @@ def channels(session: Session, tokens: List[str]) -> str:
 def handle(session: Session, msg: str) -> Optional[str]:
     tokens: List[str] = msg.strip().split()
 
-    if not tokens:
-        return "RESULT ERROR missing message type"
-
     msg_type: str = tokens.pop(0)
     result: str = ""
     if msg_type == "REGISTER":
@@ -220,7 +217,7 @@ def handle(session: Session, msg: str) -> Optional[str]:
     elif msg_type == "CHANNELS":
         result = channels(session, tokens)
     else:
-        return "RESULT ERROR unknown type"
+        return "RESULT ERROR unknown message type"
 
     if result is not None:
         return f"RESULT {msg_type} {result}"
