@@ -1,0 +1,4 @@
+S0 @ 5050
+C0 ~ S0
+C0 > CREATE channel
+C0 < RESULT CREATE channel 0

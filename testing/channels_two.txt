@@ -1,0 +1,18 @@
+S0 @ 5050
+C0 ~ S0
+C1 ~ S0
+C2 ~ S0
+C0 > REGISTER user1 password
+C0 < RESULT REGISTER 1
+C0 > LOGIN user1 password
+C0 < RESULT LOGIN 1
+C0 > CREATE channel1
+C0 < RESULT CREATE channel1 1
+C1 > REGISTER user2 password
+C1 < RESULT REGISTER 1
+C1 > LOGIN user2 password
+C1 < RESULT LOGIN 1
+C1 > CREATE channel2
+C1 < RESULT CREATE channel2 1
+C2 > CHANNELS
+C2 < RESULT CHANNELS channel1, channel2
