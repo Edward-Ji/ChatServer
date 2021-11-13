@@ -19,13 +19,14 @@ PASS = GREEN_FG + BOLD + "[Pass]" + RESET
 FAIL = RED_FG + BOLD + "[Fail]" + RESET
 
 TESTING_DIR: str = "testing"
-SERVER_WAIT: float = 2.
-TIMEOUT_TOLERANCE: float = 1.
+SOCKET_WAIT: float = 1.0
+TIMEOUT_TOLERANCE: float = 1.0
 
 SERVER_AT: str = "@"
 CLIENT_TO: str = "~"
 SEND: str = ">"
 RECV: str = "<"
+CLOSE: str = "!"
 
 
 class Server:
@@ -39,13 +40,13 @@ class Server:
         self.process: mp.Process = mp.Process(target=server.main, args=(port,))
         self.process.start()
 
-        time.sleep(SERVER_WAIT)
+        time.sleep(SOCKET_WAIT)
 
         self.instances.append(self)
 
     def close(self):
         os.kill(self.process.pid, signal.SIGINT)
-        time.sleep(SERVER_WAIT)
+        time.sleep(SOCKET_WAIT)
 
     @classmethod
     def by_name(cls, name: str) -> Optional["Server"]:
@@ -103,8 +104,10 @@ class Client:
                              f"Received {recv!r} instead.")
 
     def close(self):
-        self.selector.unregister(self.sock)
-        self.sock.close()
+        if self.sock.fileno() != -1:
+            self.selector.unregister(self.sock)
+            self.sock.close()
+            time.sleep(SOCKET_WAIT)
 
     @classmethod
     def by_name(cls, name: str) -> Optional["Client"]:
@@ -126,7 +129,10 @@ class Client:
 def test(path: str):
     with open(path) as f:
         for line in f.readlines():
-            name, verb, *args = line.split()
+            tokens = line.strip().partition("#")[0].split()
+            if not tokens:
+                continue
+            name, verb, *args = tokens
             if verb == SERVER_AT:
                 if Server.by_name(name) is not None:
                     raise ValueError(f"there exists a server named {name}")
@@ -143,11 +149,15 @@ def test(path: str):
                 if Client.by_name(name) is None:
                     raise ValueError(f"there exists no client named {name}")
                 Client.by_name(name).check_recv(" ".join(args))
+            elif verb == CLOSE:
+                if Client.by_name(name) is None:
+                    raise ValueError(f"there exists no client named {name}")
+                Client.by_name(name).close()
 
 
 def main():
     for path in sorted(os.listdir(TESTING_DIR)):
-        name: str = path[:path.index('.')].replace('_', ' ').title()
+        name: str = path.removesuffix(".txt").replace('_', ' ').title()
         try:
             test(os.path.join(TESTING_DIR, path))
         except Exception as e:

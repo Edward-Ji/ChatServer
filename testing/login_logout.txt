@@ -1,0 +1,10 @@
+S0 @ 5050
+C0 ~ S0
+C1 ~ S0
+C0 > REGISTER user password
+C0 < RESULT REGISTER 1
+C0 > LOGIN user password
+C0 < RESULT LOGIN 1
+C0 !
+C1 > LOGIN user password
+C1 < RESULT LOGIN 1

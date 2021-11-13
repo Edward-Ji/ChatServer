@@ -156,17 +156,25 @@ python3 testing.py
 
 ### Test Syntax
 
-All servers and clients are set up at localhost.
+This section explains the syntax of the test cases in the `testing` directory.
+All servers and clients are set up at localhost. Empty lines and comments are
+ignored.
 
 ```
-<name> <action> [<argument>...]
+<name> <action> [<argument>...] [# <comment>]
 ```
 
 The available actions are:
-- `@` followed by an integer port number. This command sets up a server at the specified port;
-- `~` followed by the name of a previously set up server. This command sets up a client to connet to that server's address and port;
-- `>` followed by a series of words. This command sends the words through the client. If it fails to send the message, the test fails.
-- `<` followed by a series of words. This command tells the client to receive data and compares it with the specified words. If they do not match, the test fails.
+- `@` followed by an integer port number. This command sets up a server at the
+  specified port;
+- `~` followed by the name of a previously set up server. This command sets up a
+  client to connect to that server's address and port;
+- `>` followed by a series of words. This command sends the words through the
+  client. If it fails to send the message, the test fails.
+- `<` followed by a series of words. This command tells the client to receive
+  data and compares it with the specified words. If they do not match, the test
+  fails.
+- `!` This command closes the client.
 
 ### Coverage
 
@@ -184,3 +192,5 @@ In sequence, they accomplish the following:
 - Combine the coverage data from multiple processes;
 - Display a brief coverage report;
 - Generate a detailed html report in the `htmlcov` directory.
+
+To open the html report, use `open htmlcov/index.html`.
