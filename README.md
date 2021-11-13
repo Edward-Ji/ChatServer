@@ -37,6 +37,7 @@ LOGIN <username> <password>
 The server attempts to login the user with the given name using the password. It
 fails if one of the following is met:
 - The client is already logged in as another user;
+- The user is logged in by another client;
 - No user with such name exists;
 - The password is incorrect.
 
@@ -57,7 +58,7 @@ CREATE <name>
 The server attempts to create a channel with the given name. It fails if one of
 the following is met:
 - The client is not logged in;
-- A channel with such name does not exist.
+- A channel with such name exists.
 
 ---
 
