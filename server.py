@@ -187,10 +187,8 @@ def create(session: Session, tokens: List[str]) -> str:
 
 @check_n_args(2, -1)
 def say(session: Session, tokens: List[str]) -> Optional[str]:
-    if session.user is None:
-        return
-    if not session.user.say(*tokens):
-        return "ERROR"
+    if session.user is None or not session.user.say(*tokens):
+        return "0"
 
 
 @check_n_args(0)
