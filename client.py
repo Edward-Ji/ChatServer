@@ -31,9 +31,12 @@ def main():
                         while pending:
                             client.send(pending.pop(0).encode())
     except KeyboardInterrupt:
-        client.close()
+        pass
     except Exception as e:
         sys.stdout.write(f"{type(e).__name__}: {e}\n")
+        return
+    finally:
+        client.close()
 
 
 if __name__ == '__main__':
