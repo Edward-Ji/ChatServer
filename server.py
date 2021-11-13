@@ -136,21 +136,19 @@ class Session:
                 self.replies.append(result)
 
 
-def check_n_args(*n_args: int) -> Callable:
-    min_n_args: int = None
-    max_n_args: int = None
-    if len(n_args) == 0:
-        max_n_args = 0
-    elif len(n_args) == 1:
-        min_n_args, = max_n_args, = n_args
-    elif len(n_args) == 2:
-        min_n_args, max_n_args = n_args
+def check_n_args(*limit: int) -> Callable:
+    min_limit: int
+    max_limit: int
+    if len(limit) == 1:
+        min_limit, = max_limit, = limit
+    else:
+        min_limit, max_limit = limit
 
     def decorator(func: Callable) -> Callable:
         def wrapper(session: Session, tokens: List[str]) -> str:
-            if min_n_args is not None and len(tokens) < min_n_args:
+            if len(tokens) < min_limit:
                 return "ERROR not enough arguments"
-            if max_n_args is not None and len(tokens) > max_n_args:
+            if max_limit != -1 and len(tokens) > max_limit:
                 return "ERROR too many arguments"
             return func(session, tokens)
         return wrapper
@@ -187,7 +185,7 @@ def create(session: Session, tokens: List[str]) -> str:
     return "{} {:d}".format(tokens[0], status)
 
 
-@check_n_args(2, None)
+@check_n_args(2, -1)
 def say(session: Session, tokens: List[str]) -> Optional[str]:
     if session.user is None:
         return
@@ -195,7 +193,7 @@ def say(session: Session, tokens: List[str]) -> Optional[str]:
         return "ERROR"
 
 
-@check_n_args()
+@check_n_args(0)
 def channels(session: Session, tokens: List[str]) -> str:
     # Return a sorted list of all channel names, joined by comma space.
     return ", ".join(sorted(map(lambda c: c.name, Channel.instances)))

@@ -1,0 +1,6 @@
+S0 @ 5050
+C0 ~ S0
+C0 > REGISTER user_no_password
+C0 < RESULT REGISTER ERROR not enough arguments
+C0 > REGISTER user password what_is_this
+C0 < RESULT REGISTER ERROR too many arguments
