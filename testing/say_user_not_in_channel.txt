@@ -1,0 +1,15 @@
+S0 @ 5050
+C0 ~ S0
+C1 ~ S0
+
+# Setup a client as user1 and a new channel
+C0 > REGISTER user1 password
+C0 < RESULT REGISTER 1
+C0 > LOGIN user1 password
+C0 < RESULT LOGIN 1
+C0 > CREATE channel
+C0 < RESULT CREATE channel 1
+
+# Attempt to send message through a channel not joined
+C0 > SAY channel hello world
+C0 < RESULT SAY 0
