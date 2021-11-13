@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python3
 import logging
 import os
 import selectors
@@ -10,7 +10,7 @@ from hashlib import pbkdf2_hmac
 from typing import Callable, List, Optional
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.CRITICAL)
 
 selector: selectors.BaseSelector = selectors.DefaultSelector()
 
@@ -172,16 +172,18 @@ def login(session: Session, tokens: List[str]) -> str:
 @check_n_args(1)
 def join(session: Session, tokens: List[str]) -> str:
     if session.user is None:
-        return 0
-    status: bool = session.user.join(*tokens)
+        status: bool = False
+    else:
+        status: bool = session.user.join(*tokens)
     return "{} {:d}".format(tokens[0], status)
 
 
 @check_n_args(1)
 def create(session: Session, tokens: List[str]) -> str:
     if session.user is None:
-        return 0
-    status: bool = Channel.create(*tokens)
+        status: bool = False
+    else:
+        status: bool = Channel.create(*tokens)
     return "{} {:d}".format(tokens[0], status)
 
 
@@ -220,7 +222,7 @@ def handle(session: Session, msg: str) -> Optional[str]:
     elif msg_type == "CHANNELS":
         result = channels(session, tokens)
     else:
-        return f"RESULT ERROR unrecognised message type {msg_type}"
+        return "RESULT ERROR unknown type"
 
     if result is not None:
         return f"RESULT {msg_type} {result}"
@@ -289,10 +291,8 @@ def quit_gracefully(signum, frame):
     loop = False
 
 
-def main():
+def main(port):
     signal.signal(signal.SIGINT, quit_gracefully)
-
-    port = int(sys.argv[1])
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setblocking(False)
@@ -300,6 +300,7 @@ def main():
     server.bind(("localhost", port))
     server.listen()
     selector.register(server, selectors.EVENT_READ, None)
+    logging.info(f"Server start listening port {port}")
 
     sessions = []
 
@@ -319,7 +320,8 @@ def main():
 
     logging.info("Closing the server")
     server.close()
+    selector.close()
 
 
 if __name__ == "__main__":
-    main()
+    main(int(sys.argv[1]))
