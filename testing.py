@@ -1,10 +1,12 @@
 import multiprocessing as mp
 import os
+import signal
 import selectors
 import socket
 import time
 
-from server import main as server_main
+import server
+
 from typing import Optional
 
 
@@ -13,12 +15,12 @@ BOLD = "\033[1m"
 RED_FG = "\033[31m"
 GREEN_FG = "\033[32m"
 
-PASS = GREEN_FG + "[Pass]" + RESET
-FAIL = RED_FG + "[Fail]" + RESET
+PASS = GREEN_FG + BOLD + "[Pass]" + RESET
+FAIL = RED_FG + BOLD + "[Fail]" + RESET
 
 TESTING_DIR: str = "testing"
-SERVER_STARTUP_TIME: int = 1
-TIMEOUT_TOLERANCE: int = 1
+SERVER_WAIT: float = 2.
+TIMEOUT_TOLERANCE: float = 1.
 
 SERVER_AT: str = "@"
 CLIENT_TO: str = "~"
@@ -34,18 +36,16 @@ class Server:
         self.name: str = name
         self.port: int = port
 
-        self.process: mp.Process = mp.Process(target=server_main, args=(port,))
+        self.process: mp.Process = mp.Process(target=server.main, args=(port,))
         self.process.start()
 
-        time.sleep(SERVER_STARTUP_TIME)
+        time.sleep(SERVER_WAIT)
 
         self.instances.append(self)
 
     def close(self):
-        self.process.terminate()
-        while self.process.is_alive():
-            pass
-        self.process.close()
+        os.kill(self.process.pid, signal.SIGINT)
+        time.sleep(SERVER_WAIT)
 
     @classmethod
     def by_name(cls, name: str) -> Optional["Server"]:
@@ -85,16 +85,16 @@ class Client:
     def check_send(self, text: str):
         self.selector.modify(self.sock, selectors.EVENT_WRITE)
         if not self.selector.select(TIMEOUT_TOLERANCE):
-            raise ValueError("Socket not available for write")
+            raise ValueError("Socket not available for write!")
         data: bytes = text.encode()
         sent: int = self.sock.send(data)
         if sent != len(data):
-            raise ValueError("Sent data is incomplete")
+            raise ValueError("Sent data is incomplete!")
 
     def check_recv(self, text: str):
         self.selector.modify(self.sock, selectors.EVENT_READ)
         if not self.selector.select(TIMEOUT_TOLERANCE):
-            raise ValueError("Socket not available for read")
+            raise ValueError("Socket not available for read!")
         data: bytes = self.sock.recv(1024)
         recv: str = data.decode().removesuffix("\n")
         if recv != text:
@@ -158,8 +158,8 @@ def main():
         else:
             print(f"{PASS} {name}")
         finally:
-            Server.clear_all()
             Client.clear_all()
+            Server.clear_all()
 
 
 if __name__ == '__main__':
