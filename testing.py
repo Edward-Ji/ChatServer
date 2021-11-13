@@ -1,3 +1,4 @@
+import json
 import multiprocessing as mp
 import os
 import signal
@@ -15,8 +16,8 @@ BOLD = "\033[1m"
 RED_FG = "\033[31m"
 GREEN_FG = "\033[32m"
 
-PASS = GREEN_FG + BOLD + "[Pass]" + RESET
-FAIL = RED_FG + BOLD + "[Fail]" + RESET
+PASS = GREEN_FG + BOLD + "[Passed]" + RESET
+FAIL = RED_FG + BOLD + "[Failed]" + RESET
 
 TESTING_DIR: str = "testing"
 SOCKET_WAIT: float = 1.0
@@ -156,6 +157,7 @@ def test(path: str):
 
 
 def main():
+    records = []
     for path in sorted(os.listdir(TESTING_DIR)):
         name: str = path.removesuffix(".txt").replace('_', ' ').title()
         try:
@@ -165,11 +167,15 @@ def main():
             # Display error message indented.
             print("\t" + type(e).__name__)
             print(*map(lambda s: "\t" + s, str(e).split("\n")), sep='\n')
+            records.append({name: "Failed"})
         else:
             print(f"{PASS} {name}")
+            records.append({name: "Passed"})
         finally:
             Client.clear_all()
             Server.clear_all()
+    with open("testing.json", "w") as f:
+        json.dump(records, f)
 
 
 if __name__ == '__main__':

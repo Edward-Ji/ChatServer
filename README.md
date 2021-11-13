@@ -154,6 +154,9 @@ Run all tests directly by running `testing.py`.
 python3 testing.py
 ```
 
+After each running each test, the script shows their status (pass or fail). It
+also writes to `testing.json` at the end including a record of all tests.
+
 ### Test Syntax
 
 This section explains the syntax of the test cases in the `testing` directory.
@@ -188,7 +191,8 @@ coverage html
 ```
 
 In sequence, they accomplish the following:
-- Run `testing.py` and generate a series of coverage data;
+- Run `testing.py` and generate a series of coverage data. This includes all
+  functions described above under Testing;
 - Combine the coverage data from multiple processes;
 - Display a brief coverage report;
 - Generate a detailed html report in the `htmlcov` directory.
