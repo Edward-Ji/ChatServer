@@ -149,7 +149,38 @@ RESULT ERROR unknown type
 
 ## Testing
 
-### Coverage
+Run all tests directly by running `testing.py`.
+```
+python3 testing.py
+```
+
+### Test Syntax
+
+All servers and clients are set up at localhost.
 
 ```
+<name> <action> [<argument>...]
 ```
+
+The available actions are:
+- `@` followed by an integer port number. This command sets up a server at the specified port;
+- `~` followed by the name of a previously set up server. This command sets up a client to connet to that server's address and port;
+- `>` followed by a series of words. This command sends the words through the client. If it fails to send the message, the test fails.
+- `<` followed by a series of words. This command tells the client to receive data and compares it with the specified words. If they do not match, the test fails.
+
+### Coverage
+
+To run all tests with coverage on `server.py`,
+
+```
+coverage run
+coverage combine
+coverage report
+coverage html
+```
+
+In sequence, they accomplish the following:
+- Run `testing.py` and generate a series of coverage data;
+- Combine the coverage data from multiple processes;
+- Display a brief coverage report;
+- Generate a detailed html report in the `htmlcov` directory.
