@@ -2,7 +2,7 @@ S0 @ 5050
 C0 ~ S0
 C1 ~ S0
 
-# Setup a client to join a channel as user1
+# Setup a client to join a channel as user1.
 C0 > REGISTER user1 password
 C0 < RESULT REGISTER 1
 C0 > LOGIN user1 password
@@ -12,6 +12,6 @@ C0 < RESULT CREATE channel 1
 C0 > JOIN channel
 C0 < RESULT JOIN channel 1
 
-# Attempt to broadcast
+# Attempt to broadcast from another client not logged in.
 C1 > SAY channel hello world
 C1 < RESULT SAY 0
