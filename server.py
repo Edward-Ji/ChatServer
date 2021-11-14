@@ -247,9 +247,9 @@ def read(key):
             session.pending.extend(filter(None, msg.split("\n")))
         else:
             close(key)
-    except UnicodeError:
+    except UnicodeError:  # pragma: no cover
         logger.warning(f"Can not decode message from {conn.getpeername()}")
-    except OSError as e:
+    except OSError as e:  # pragma: no cover
         logger.warning(f"{type(e).__name__}: {e}")
         session.logout()
         selector.unregister(conn)
@@ -263,7 +263,7 @@ def write(key):
             reply: str = session.replies.pop(0) + "\n"
             logger.debug(f"Sending {reply!r} to {conn.getpeername()}")
             conn.send(reply.encode())
-    except OSError as e:
+    except OSError as e:  # pragma: no cover
         logger.warning(f"{type(e).__name__}: {e}")
         session.logout()
         selector.unregister(conn)
