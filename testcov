@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+shout() {
+    local -r RESET="\033[0m"
+    local -r BOLD="\033[1m"
+    printf "${BOLD}$@${RESET}\n"
+}
+
+shout Running testing.py with coverage...
+coverage run
+
+shout Combining all coverage reports queitly...
+coverage combine -q
+
+shout Displaying a brief overall coverage report...
+coverage report
+
+shout Generating a detailed overall coverage report...
+coverage html

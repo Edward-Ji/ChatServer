@@ -20,6 +20,7 @@ PASS = GREEN_FG + BOLD + "[Passed]" + RESET
 FAIL = RED_FG + BOLD + "[Failed]" + RESET
 
 TESTING_DIR: str = "testing"
+JSON_PATH: str = "testing.json"
 SOCKET_WAIT: float = 1.0
 TIMEOUT_TOLERANCE: float = 1.0
 
@@ -174,8 +175,10 @@ def main():
         finally:
             Client.clear_all()
             Server.clear_all()
-    with open("testing.json", "w") as f:
+
+    with open(JSON_PATH, "w") as f:
         json.dump(records, f)
+    print(f"Testing records are dumped into {JSON_PATH}.")
 
 
 if __name__ == '__main__':

@@ -184,17 +184,12 @@ The available actions are:
 To run all tests with coverage on `server.py`,
 
 ```
-coverage run
-coverage combine
-coverage report
-coverage html
+./testcov
 ```
 
 In sequence, they accomplish the following:
 - Run `testing.py` and generate a series of coverage data. This includes all
-  functions described above under Testing;
+  functions described under Testing;
 - Combine the coverage data from multiple processes;
 - Display a brief coverage report;
-- Generate a detailed html report in the `htmlcov` directory.
-
-To open the html report, use `open htmlcov/index.html`.
+- Generate a detailed html report at `htmlcov/index.html`.
