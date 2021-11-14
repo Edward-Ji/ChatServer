@@ -10,8 +10,13 @@ from hashlib import pbkdf2_hmac
 from typing import Callable, List, Optional
 
 
-logging.basicConfig(level=logging.CRITICAL)
+# Initialize a logger at debug level, but defaults to disabled.
+logging.basicConfig(level=logging.NOTSET)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.disabled = True
 
+# Initialize a selector for non-blocking socket I/O.
 selector: selectors.BaseSelector = selectors.DefaultSelector()
 
 
@@ -223,7 +228,7 @@ def handle(session: Session, msg: str) -> Optional[str]:
 
 def accept(server: socket.socket) -> Session:
     conn, addr = server.accept()
-    logging.info(f"Accept connection from address {addr}")
+    logger.info(f"Accept connection from address {addr}")
     conn.setblocking(False)
     session = Session()
     selector.register(conn,
@@ -238,14 +243,14 @@ def read(key):
     try:
         msg = conn.recv(1024).decode()
         if msg:
-            logging.debug(f"Received {msg!r} from {conn.getpeername()}")
+            logger.debug(f"Received {msg!r} from {conn.getpeername()}")
             session.pending.extend(filter(None, msg.split("\n")))
         else:
             close(key)
     except UnicodeError:
-        logging.warning(f"Can not decode message from {conn.getpeername()}")
+        logger.warning(f"Can not decode message from {conn.getpeername()}")
     except OSError as e:
-        logging.warning(f"{type(e).__name__}: {e}")
+        logger.warning(f"{type(e).__name__}: {e}")
         session.logout()
         selector.unregister(conn)
 
@@ -256,10 +261,10 @@ def write(key):
     try:
         while session.replies:
             reply: str = session.replies.pop(0) + "\n"
-            logging.debug(f"Sending {reply!r} to {conn.getpeername()}")
+            logger.debug(f"Sending {reply!r} to {conn.getpeername()}")
             conn.send(reply.encode())
     except OSError as e:
-        logging.warning(f"{type(e).__name__}: {e}")
+        logger.warning(f"{type(e).__name__}: {e}")
         session.logout()
         selector.unregister(conn)
 
@@ -267,7 +272,7 @@ def write(key):
 def close(key):
     conn = key.fileobj
     session = key.data
-    logging.info(f"Closing connection to {conn.getpeername()}")
+    logger.info(f"Closing connection to {conn.getpeername()}")
     session.logout()
     selector.unregister(conn)
     conn.close()
@@ -280,11 +285,11 @@ loop = True
 # Do not modify or remove this handler
 def quit_gracefully(signum, frame):
     global loop
-    logging.info("Received interrupt signal")
+    logger.info("Received interrupt signal")
     loop = False
 
 
-def main(port):
+def server(port):
     signal.signal(signal.SIGINT, quit_gracefully)
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -293,7 +298,7 @@ def main(port):
     server.bind(("localhost", port))
     server.listen()
     selector.register(server, selectors.EVENT_READ, None)
-    logging.info(f"Server start listening port {port}")
+    logger.info(f"Server start listening port {port}")
 
     sessions = []
 
@@ -311,10 +316,16 @@ def main(port):
         for session in sessions:
             session.handle()
 
-    logging.info("Closing the server")
+    logger.info("Closing the server")
     server.close()
     selector.close()
 
 
+def main():
+    # Enable the logger if run as main program.
+    logger.disabled = False
+    server(int(sys.argv[1]))
+
+
 if __name__ == "__main__":
-    main(int(sys.argv[1]))
+    main()

@@ -6,7 +6,7 @@ import selectors
 import socket
 import time
 
-import server
+from server import server
 
 from typing import Optional
 
@@ -39,7 +39,7 @@ class Server:
         self.name: str = name
         self.port: int = port
 
-        self.process: mp.Process = mp.Process(target=server.main, args=(port,))
+        self.process: mp.Process = mp.Process(target=server, args=(port,))
         self.process.start()
 
         time.sleep(SOCKET_WAIT)
