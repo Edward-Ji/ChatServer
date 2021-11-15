@@ -17,6 +17,7 @@ BOLD = "\033[1m"
 RED_FG = "\033[31m"
 GREEN_FG = "\033[32m"
 GRAY_FG = "\33[90m"
+ERASE_LINE = "\33[K"
 
 RUNNING = GRAY_FG + BOLD + "[Running] " + RESET
 PASSED = GREEN_FG + BOLD + "[Passed]  " + RESET
@@ -224,6 +225,24 @@ def error(exception, with_type=False):
         print(PADDING + line)
 
 
+def summary(records):
+    total = len(records)
+    status_count = {}
+    for record in records:
+        name, = record
+        status = record[name]
+        if status in status_count:
+            status_count[status] += 1
+        else:
+            status_count[status] = 1
+    print(f"{ERASE_LINE}{BOLD}Summary{RESET}")
+    print("Status         Count     Percentage")
+    print("-----------------------------------")
+    for status, count in status_count.items():
+        print("{:10s}{:10d}{:15.0%}".format(status, count, count / total))
+    print("Total     {:10d}".format(total))
+
+
 def main():
     records = []
     exit_status = 0
@@ -254,6 +273,8 @@ def main():
             print(f"{CLEANING}", end="\r")
             Client.clear_all()
             Server.clear_all()
+
+    summary(records)
 
     with open(JSON_PATH, "w") as f:
         json.dump(records, f)
