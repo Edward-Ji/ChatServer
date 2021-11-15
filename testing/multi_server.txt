@@ -15,7 +15,7 @@ C0 < RESULT CREATE channel 1
 C0 > JOIN channel
 C0 < RESULT JOIN channel 1
 C0 > SAY channel hello world
-C0 > RECV user channel hello world
+C0 < RECV user channel hello world
 
 # Attempt to perform exactly the same actions in the second server.
 C1 > REGISTER user password
@@ -27,4 +27,4 @@ C1 < RESULT CREATE channel 1
 C1 > JOIN channel
 C1 < RESULT JOIN channel 1
 C1 > SAY channel hello world
-C1 > RECV user channel hello world
+C1 < RECV user channel hello world
