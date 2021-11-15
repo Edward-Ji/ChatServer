@@ -18,9 +18,11 @@ RED_FG = "\033[31m"
 GREEN_FG = "\033[32m"
 GRAY_FG = "\33[90m"
 
-PASSED = GREEN_FG + BOLD + "[Passed]" + RESET
-FAILED = RED_FG + BOLD + "[Failed]" + RESET
-IGNORED = GRAY_FG + BOLD + "[Ignored]" + RESET
+RUNNING = GRAY_FG + BOLD + "[Running]" + RESET
+PASSED = GREEN_FG + BOLD + "[Passed] " + RESET
+FAILED = RED_FG + BOLD + "[Failed] " + RESET
+IGNORED = GRAY_FG + BOLD + "[Ignored] " + RESET
+CLEANING = GRAY_FG + BOLD + "[Cleaning]" + RESET
 
 TESTING_DIR: str = "testing"
 JSON_PATH: str = "testing.json"
@@ -228,6 +230,7 @@ def main():
 
     for path in paths:
         name: str = path.removesuffix(".txt").replace('_', ' ').title()
+        print(f"{RUNNING} {name}", end="\r")
         try:
             test(os.path.join(TESTING_DIR, path))
         except InvalidTest as e:
@@ -243,6 +246,7 @@ def main():
             print(f"{PASSED} {name}")
             records.append({name: "Passed"})
         finally:
+            print(f"{CLEANING}", end="\r")
             Client.clear_all()
             Server.clear_all()
 
