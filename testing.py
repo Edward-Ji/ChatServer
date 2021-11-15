@@ -18,11 +18,12 @@ RED_FG = "\033[31m"
 GREEN_FG = "\033[32m"
 GRAY_FG = "\33[90m"
 
-RUNNING = GRAY_FG + BOLD + "[Running]" + RESET
-PASSED = GREEN_FG + BOLD + "[Passed] " + RESET
-FAILED = RED_FG + BOLD + "[Failed] " + RESET
+RUNNING = GRAY_FG + BOLD + "[Running] " + RESET
+PASSED = GREEN_FG + BOLD + "[Passed]  " + RESET
+FAILED = RED_FG + BOLD + "[Failed]  " + RESET
 IGNORED = GRAY_FG + BOLD + "[Ignored] " + RESET
 CLEANING = GRAY_FG + BOLD + "[Cleaning]" + RESET
+PADDING = " " * 11
 
 TESTING_DIR: str = "testing"
 JSON_PATH: str = "testing.json"
@@ -218,9 +219,9 @@ def test(path):
 
 def error(exception, with_type=False):
     if with_type:
-        print("\t Unhandled exception: " + type(exception).__name__)
+        print(PADDING + "Unhandled " + type(exception).__name__)
     for line in str(exception).split("\n"):
-        print("\t" + line)
+        print(PADDING + line)
 
 
 def main():
@@ -233,9 +234,9 @@ def main():
         paths = filter(lambda s: pattern in s, paths)
 
     for path in paths:
-        name: str = path.removesuffix(".txt").replace('_', ' ').title()
-        print(f"{RUNNING} {name}", end="\r")
+        name = path.removesuffix(".txt").replace('_', ' ').title()
         try:
+            print(f"{RUNNING} {name}", end="\r")
             test(os.path.join(TESTING_DIR, path))
         except InvalidTest as e:
             print(f"{IGNORED} {name}")
