@@ -1,4 +1,4 @@
-# Server
+# Chat Server
 
 This is a simple chat server written using Python socket - a low-level network
 interface. It can handle multiple client connections at the same time using
@@ -147,37 +147,60 @@ send back
 RESULT ERROR unknown type
 ```
 
+## Client
+
+After starting a local server at port 5050 (or any other vacant port). You can
+use `netcat` or `client.py` to communicate with the server.
+```
+netcat localhost 5050
+```
+or
+```
+python3 client.py 5050
+```
+
 ## Testing
+
+### Simple I/O Tests
 
 Run all tests directly by running `testing.py`.
 ```
-python3 testing.py
+python3 testing.py [<pattern>]
 ```
 
-After each running each test, the script shows their status (pass or fail). It
-also writes to `testing.json` at the end including a record of all tests.
+If a pattern is specified, only test cases with the pattern in its name is run.
+
+The script automatically runs all test cases in the `testing` directory. It sets
+up all the servers at localhost. It uses custom client objects to check sent and
+received messages. The test case fails if the client fails to send specified
+message in the test case or the received message mismatch the expected one. It
+also fails upon an unhandled exception.
+
+After running each test, the script prints to standard out if the test passed or
+failed. It also writes a full record to `testing.json` after all tests are run.
+
+The script returns with a non-zero status if any test case fails.
 
 ### Test Syntax
 
 This section explains the syntax of the test cases in the `testing` directory.
-All servers and clients are set up at localhost. Empty lines and comments are
-ignored.
 
 ```
 <name> <action> [<argument>...] [# <comment>]
 ```
-
 The available actions are:
-- `@` followed by an integer port number. This command sets up a server at the
-  specified port;
+- `@` followed by an integer port number. This command starts up a server
+  process at the specified port;
 - `~` followed by the name of a previously set up server. This command sets up a
-  client to connect to that server's address and port;
+  client socket to connect to that server's port;
 - `>` followed by a series of words. This command sends the words through the
   client. If it fails to send the message, the test fails.
 - `<` followed by a series of words. This command tells the client to receive
   data and compares it with the specified words. If they do not match, the test
   fails.
-- `!` This command closes the client.
+- `!` This command closes the client socket.
+
+Empty lines and comments are ignored.
 
 ### Coverage
 
@@ -187,9 +210,9 @@ To run all tests with coverage on `server.py`,
 ./testcov
 ```
 
-In sequence, they accomplish the following:
+It accomplishes the following:
 - Run `testing.py` and generate a series of coverage data. This includes all
-  functions described under Testing;
-- Combine the coverage data from multiple processes;
+  functions described in Simple I/O Tests;
+- Combine the coverage data from multiple server processes;
 - Display a brief coverage report;
 - Generate a detailed html report at `htmlcov/index.html`.
