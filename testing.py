@@ -160,10 +160,13 @@ def test(path: str):
 
 def main():
     records = []
+    exit_status = 0
+
     paths = sorted(os.listdir(TESTING_DIR))
     if len(sys.argv) >= 2:
         pattern = sys.argv[1]
         paths = filter(lambda s: pattern in s, paths)
+
     for path in paths:
         name: str = path.removesuffix(".txt").replace('_', ' ').title()
         try:
@@ -174,6 +177,7 @@ def main():
             print("\t" + type(e).__name__)
             print(*map(lambda s: "\t" + s, str(e).split("\n")), sep='\n')
             records.append({name: "Failed"})
+            exit_status = 1
         else:
             print(f"{PASS} {name}")
             records.append({name: "Passed"})
@@ -184,6 +188,8 @@ def main():
     with open(JSON_PATH, "w") as f:
         json.dump(records, f)
     print(f"Testing records are dumped into {JSON_PATH}.")
+
+    sys.exit(exit_status)
 
 
 if __name__ == '__main__':
