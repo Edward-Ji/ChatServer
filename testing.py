@@ -40,12 +40,15 @@ class FailTest(Exception):
 
 class InvalidTest(Exception):
 
-    def __init__(self, *args, **kwargs):
-        self.line_no = kwargs.pop("line_no")
-        super().__init__(*args, **kwargs)
+    def __init__(self, message, line_no):
+        super().__init__(message)
+        self.line_no = line_no
 
     def __str__(self):
-        return f"Line {self.line_no} is invalid!\n" + super().__str__()
+        if self.line_no != -1:
+            return f"Line {self.line_no} is invalid!\n" + super().__str__()
+        else:
+            return super().__str__()
 
 
 class Server:
@@ -145,52 +148,66 @@ class Client:
         cls.instances.clear()
 
 
-def test(path: str):
-    with open(path) as f:
-        for line_no, line in enumerate(f.readlines()):
-            # Ignore comments and split tokens.
-            tokens = line.strip().partition("#")[0].split()
-            if not tokens:
-                # Ignore empty lines
-                continue
-            elif len(tokens) < 2:
-                raise InvalidTest("Missing action symbol.",
-                                  line_no=line_no)
-            name, action, *args = tokens
+def load(path):
+    try:
+        with open(path) as f:
+            return f.readlines()
+    except FileNotFoundError:
+        raise InvalidTest("Unable to load the test case!")
 
-            if action == SERVER_AT:
-                if Server.by_name(name) is not None:
-                    raise InvalidTest(f"There exists a server named {name}.",
-                                      line_no=line_no)
-                elif not args:
-                    raise InvalidTest("Missing server port to bind with.",
-                                      line_no=line_no)
-                elif not args[0].isdigit():
-                    raise InvalidTest("Invalid server port.",
-                                      line_no=line_no)
-                Server(name, int(args[0]))
-            elif action == CLIENT_TO:
-                if Client.by_name(name) is not None:
-                    raise InvalidTest(f"There exists a client named {name}.",
-                                      line_no=line_no)
-                elif not args:
-                    raise InvalidTest("Missing server name to connect to.",
-                                      line_no=line_no)
-                Client(name, Server.by_name(args[0]).port)
-            elif action in (SEND, RECV, CLOSE):
-                client = Client.by_name(name)
-                if client is None:
-                    raise InvalidTest(f"There exists no client named {name}.",
-                                      line_no=line_no)
-                if action == SEND:
-                    client.check_send(" ".join(args))
-                elif action == RECV:
-                    client.check_recv(" ".join(args))
-                elif action == CLOSE:
-                    client.close()
-            else:
-                raise InvalidTest(f"Unknown action symbol {action}.",
-                                  line_no=line_no)
+
+def server_at(name, args, line_no):
+    if Server.by_name(name) is not None:
+        raise InvalidTest(f"There exists a server named {name}.", line_no)
+    elif not args:
+        raise InvalidTest("Missing server port to bind with.", line_no)
+    elif not args[0].isdigit():
+        raise InvalidTest("Invalid server port.", line_no)
+    Server(name, int(args[0]))
+
+
+def client_to(name, args, line_no):
+    if Client.by_name(name) is not None:
+        raise InvalidTest(f"There exists a client named {name}.",
+                          line_no=line_no)
+    elif not args:
+        raise InvalidTest("Missing server name to connect to.",
+                          line_no=line_no)
+    Client(name, Server.by_name(args[0]).port)
+
+
+def client_action(name, action, args, line_no):
+    client = Client.by_name(name)
+    if client is None:
+        raise InvalidTest(f"There exists no client named {name}.", line_no)
+    if action == SEND:
+        client.check_send(" ".join(args))
+    elif action == RECV:
+        client.check_recv(" ".join(args))
+    elif action == CLOSE:
+        client.close()
+
+
+def test(path):
+    lines = load(path)
+    for line_no, line in enumerate(lines):
+        # Ignore comments and split tokens.
+        tokens = line.strip().partition("#")[0].split()
+        if not tokens:
+            # Ignore empty lines
+            continue
+        elif len(tokens) < 2:
+            raise InvalidTest("Missing action symbol.", line_no)
+
+        name, action, *args = tokens
+        if action == SERVER_AT:
+            server_at(name, args, line_no)
+        elif action == CLIENT_TO:
+            client_to(name, args, line_no)
+        elif action in (SEND, RECV, CLOSE):
+            client_action(name, action, args, line_no)
+        else:
+            raise InvalidTest(f"Unknown action symbol {action}.", line_no)
 
 
 def error(exception, with_type=False):
@@ -217,15 +234,10 @@ def main():
             print(f"{IGNORED} {name}")
             records.append({name: "Ignored"})
             error(e)
-        except FailTest as e:
-            print(f"{FAILED} {name}")
-            records.append({name: "Failed"})
-            error(e)
-            exit_status = 1
         except Exception as e:
             print(f"{FAILED} {name}")
             records.append({name: "Failed"})
-            error(e, with_type=True)
+            error(e, with_type=isinstance(e, FailTest))
             exit_status = 1
         else:
             print(f"{PASSED} {name}")
