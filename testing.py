@@ -161,11 +161,15 @@ def load(path):
 def server_at(name, args, line_no):
     if Server.by_name(name) is not None:
         raise InvalidTest(f"There exists a server named {name}.", line_no)
-    elif not args:
+    if not args:
         raise InvalidTest("Missing server port to bind with.", line_no)
-    elif not args[0].isdigit():
-        raise InvalidTest("Invalid server port.", line_no)
-    Server(name, int(args[0]))
+    port = args[0]
+    if not port.isdigit():
+        raise InvalidTest("Server port must be integer.", line_no)
+    port = int(port)
+    if not 1 <= port <= 65535:
+        raise InvalidTest("Server port must be between 1-65535.", line_no)
+    Server(name, port)
 
 
 def client_to(name, args, line_no):
