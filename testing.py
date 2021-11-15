@@ -16,9 +16,11 @@ RESET = "\033[0m"
 BOLD = "\033[1m"
 RED_FG = "\033[31m"
 GREEN_FG = "\033[32m"
+GRAY_FG = "\33[90m"
 
-PASS = GREEN_FG + BOLD + "[Passed]" + RESET
-FAIL = RED_FG + BOLD + "[Failed]" + RESET
+PASSED = GREEN_FG + BOLD + "[Passed]" + RESET
+FAILED = RED_FG + BOLD + "[Failed]" + RESET
+IGNORED = GRAY_FG + BOLD + "[Ignored]" + RESET
 
 TESTING_DIR: str = "testing"
 JSON_PATH: str = "testing.json"
@@ -30,6 +32,20 @@ CLIENT_TO: str = "~"
 SEND: str = ">"
 RECV: str = "<"
 CLOSE: str = "!"
+
+
+class FailTest(Exception):
+    pass
+
+
+class InvalidTest(Exception):
+
+    def __init__(self, *args, **kwargs):
+        self.line_no = kwargs.pop("line_no")
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return f"Line {self.line_no} is invalid!\n" + super().__str__()
 
 
 class Server:
@@ -89,22 +105,22 @@ class Client:
     def check_send(self, text: str):
         self.selector.modify(self.sock, selectors.EVENT_WRITE)
         if not self.selector.select(TIMEOUT_TOLERANCE):
-            raise ValueError("Socket not available for write!")
+            raise FailTest("Server socket is not available for write!")
         data: bytes = text.encode()
         sent: int = self.sock.send(data)
         if sent != len(data):
-            raise ValueError("Sent data is incomplete!")
+            raise FailTest("Server socket can not accept any more data!")
 
     def check_recv(self, text: str):
         self.selector.modify(self.sock, selectors.EVENT_READ)
         if not self.selector.select(TIMEOUT_TOLERANCE):
-            raise ValueError("Socket not available for read!")
+            raise FailTest("Socket not available for read!")
         data: bytes = self.sock.recv(1024)
         recv: str = data.decode().removesuffix("\n")
         if recv != text:
-            raise ValueError("Received text does not match!\n"
-                             f"Expecting {text!r},\n"
-                             f"Received {recv!r} instead.")
+            raise FailTest("Received text does not match!\n"
+                           f"Expecting {text!r},\n"
+                           f"Received {recv!r} instead.")
 
     def close(self):
         if self.sock.fileno() != -1:
@@ -131,31 +147,57 @@ class Client:
 
 def test(path: str):
     with open(path) as f:
-        for line in f.readlines():
+        for line_no, line in enumerate(f.readlines()):
+            # Ignore comments and split tokens.
             tokens = line.strip().partition("#")[0].split()
             if not tokens:
+                # Ignore empty lines
                 continue
-            name, verb, *args = tokens
-            if verb == SERVER_AT:
+            elif len(tokens) < 2:
+                raise InvalidTest("Missing action symbol.",
+                                  line_no=line_no)
+            name, action, *args = tokens
+
+            if action == SERVER_AT:
                 if Server.by_name(name) is not None:
-                    raise ValueError(f"there exists a server named {name}")
+                    raise InvalidTest(f"There exists a server named {name}.",
+                                      line_no=line_no)
+                elif not args:
+                    raise InvalidTest("Missing server port to bind with.",
+                                      line_no=line_no)
+                elif not args[0].isdigit():
+                    raise InvalidTest("Invalid server port.",
+                                      line_no=line_no)
                 Server(name, int(args[0]))
-            elif verb == CLIENT_TO:
+            elif action == CLIENT_TO:
                 if Client.by_name(name) is not None:
-                    raise ValueError(f"there exists a client named {name}")
+                    raise InvalidTest(f"There exists a client named {name}.",
+                                      line_no=line_no)
+                elif not args:
+                    raise InvalidTest("Missing server name to connect to.",
+                                      line_no=line_no)
                 Client(name, Server.by_name(args[0]).port)
-            elif verb == SEND:
-                if Client.by_name(name) is None:
-                    raise ValueError(f"there exists no client named {name}")
-                Client.by_name(name).check_send(" ".join(args))
-            elif verb == RECV:
-                if Client.by_name(name) is None:
-                    raise ValueError(f"there exists no client named {name}")
-                Client.by_name(name).check_recv(" ".join(args))
-            elif verb == CLOSE:
-                if Client.by_name(name) is None:
-                    raise ValueError(f"there exists no client named {name}")
-                Client.by_name(name).close()
+            elif action in (SEND, RECV, CLOSE):
+                client = Client.by_name(name)
+                if client is None:
+                    raise InvalidTest(f"There exists no client named {name}.",
+                                      line_no=line_no)
+                if action == SEND:
+                    client.check_send(" ".join(args))
+                elif action == RECV:
+                    client.check_recv(" ".join(args))
+                elif action == CLOSE:
+                    client.close()
+            else:
+                raise InvalidTest(f"Unknown action symbol {action}.",
+                                  line_no=line_no)
+
+
+def error(exception, with_type=False):
+    if with_type:
+        print("\t Unhandled exception: " + type(exception).__name__)
+    for line in str(exception).split("\n"):
+        print("\t" + line)
 
 
 def main():
@@ -171,15 +213,22 @@ def main():
         name: str = path.removesuffix(".txt").replace('_', ' ').title()
         try:
             test(os.path.join(TESTING_DIR, path))
-        except Exception as e:
-            print(f"{FAIL} {name}")
-            # Display error message indented.
-            print("\t" + type(e).__name__)
-            print(*map(lambda s: "\t" + s, str(e).split("\n")), sep='\n')
+        except InvalidTest as e:
+            print(f"{IGNORED} {name}")
+            records.append({name: "Ignored"})
+            error(e)
+        except FailTest as e:
+            print(f"{FAILED} {name}")
             records.append({name: "Failed"})
+            error(e)
+            exit_status = 1
+        except Exception as e:
+            print(f"{FAILED} {name}")
+            records.append({name: "Failed"})
+            error(e, with_type=True)
             exit_status = 1
         else:
-            print(f"{PASS} {name}")
+            print(f"{PASSED} {name}")
             records.append({name: "Passed"})
         finally:
             Client.clear_all()
