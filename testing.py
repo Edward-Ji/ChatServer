@@ -4,6 +4,7 @@ import os
 import signal
 import selectors
 import socket
+import sys
 import time
 
 from server import server
@@ -159,7 +160,11 @@ def test(path: str):
 
 def main():
     records = []
-    for path in sorted(os.listdir(TESTING_DIR)):
+    paths = sorted(os.listdir(TESTING_DIR))
+    if len(sys.argv) >= 2:
+        pattern = sys.argv[1]
+        paths = filter(lambda s: pattern in s, paths)
+    for path in paths:
         name: str = path.removesuffix(".txt").replace('_', ' ').title()
         try:
             test(os.path.join(TESTING_DIR, path))
