@@ -1,0 +1,24 @@
+name: Testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: "3.9"
+
+      - name: Run automated testing
+        run: python testing.py -multi_server
