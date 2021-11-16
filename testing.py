@@ -248,9 +248,11 @@ def main():
     exit_status = 0
 
     paths = sorted(os.listdir(TESTING_DIR))
-    if len(sys.argv) >= 2:
-        pattern = sys.argv[1]
-        paths = filter(lambda s: pattern in s, paths)
+    for pattern in sys.argv[1:]:
+        if pattern.startswith("-"):
+            paths = filter(lambda s: pattern[1:] not in s, paths)
+        else:
+            paths = filter(lambda s: pattern in s, paths)
 
     for path in paths:
         name = path.removesuffix(".txt").replace('_', ' ').title()
