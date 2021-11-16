@@ -96,7 +96,8 @@ class Channel:
         words = " ".join(words)
         msg = f"RECV {user.name} {self.name} {words}"
         for user in self.users:
-            user.logged_in.replies.append(msg)
+            if user.logged_in is not None:
+                user.logged_in.replies.append(msg)
 
     @classmethod
     def by_name(cls, name: str) -> Optional["Channel"]:
