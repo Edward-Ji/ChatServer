@@ -1,5 +1,7 @@
 # Chat Server
 
+[![Testing](https://github.com/Edward-Ji/ChatServer/actions/workflows/testing.yml/badge.svg)](https://github.com/Edward-Ji/ChatServer/actions/workflows/testing.yml)
+
 This is a simple chat server written using Python socket - a low-level network
 interface. It can handle multiple client connections at the same time using
 Python selectors. To launch the server, use the following command.
