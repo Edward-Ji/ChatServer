@@ -3,8 +3,10 @@ name: Testing
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    paths:
+      - '*.py'
+      - '!client.py'
+      - 'testing/*'
 
   workflow_dispatch:
 
