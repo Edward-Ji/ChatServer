@@ -110,7 +110,7 @@ The result is a list of all channel names joined with `, ` (comma and space).
 
 From one client to server,
 ```
-SEND <channel> <message>
+SAY <channel> <message>
 ```
 The server attempts to send a message to all users in the specified channel. It
 fails if the client is not logged in as a user in that specified channel. If the
@@ -120,7 +120,7 @@ message has consecutive white spaces, they are replaced with one space.
 
 From server to the sender client, if the server fail to send the message,
 ```
-RESULT SEND ERROR
+RESULT SAY ERROR
 ```
 
 From server to all clients logged in as a user in that specified channel,
