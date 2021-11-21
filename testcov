@@ -3,7 +3,8 @@
 shout() {
     local -r RESET="\033[0m"
     local -r BOLD="\033[1m"
-    printf "${BOLD}$@${RESET}\n"
+    local words="$@"
+    printf "${BOLD}$words${RESET}\n"
 }
 
 shout Removing coverage cache...
