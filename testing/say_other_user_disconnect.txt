@@ -12,7 +12,7 @@ C0 < RESULT CREATE channel 1
 C0 > JOIN channel
 C0 < RESULT JOIN channel 1
 
-# Setup another client to join a channel as user1.
+# Setup another client to join a channel as user2.
 C1 > REGISTER user2 password
 C1 < RESULT REGISTER 1
 C1 > LOGIN user2 password
