@@ -296,7 +296,7 @@ def server(port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setblocking(False)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(("localhost", port))
+    server.bind(("0.0.0.0", port))
     server.listen()
     selector.register(server, selectors.EVENT_READ, None)
     logger.info(f"Server start listening port {port}")
