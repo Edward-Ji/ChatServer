@@ -206,6 +206,8 @@ def channels(session: Session, tokens: List[str]) -> str:
 def handle(session: Session, msg: str) -> Optional[str]:
     tokens: List[str] = msg.strip().split()
 
+    if not tokens:
+        return "RESULT ERROR missing message type"
     msg_type: str = tokens.pop(0)
     result: str = ""
     if msg_type == "REGISTER":
